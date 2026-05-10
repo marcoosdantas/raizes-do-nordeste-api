@@ -105,6 +105,7 @@
                   "if (json.accessToken) {",
                   "  pm.collectionVariables.set(\"tokenAdmin\", json.accessToken);",
                   "  pm.collectionVariables.set(\"tokenPrivilegiado\", json.accessToken);",
+                  "  pm.collectionVariables.set(\"token\", json.accessToken);",
                   "}"
                 ]
               }
@@ -155,6 +156,7 @@
                   "if (json.accessToken) {",
                   "  pm.collectionVariables.set(\"tokenGerente\", json.accessToken);",
                   "  pm.collectionVariables.set(\"tokenPrivilegiado\", json.accessToken);",
+                  "  pm.collectionVariables.set(\"token\", json.accessToken);",
                   "}"
                 ]
               }
@@ -225,7 +227,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{tokenCliente}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -250,7 +252,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{tokenCliente}}",
+                  "value": "{{token}}",
                   "type": "string"
                 }
               ]
@@ -444,7 +446,26 @@
                 "produtos"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set(\"produtoId\", json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "description": "Salva o id retornado em {{produtoId}} para uso em /produtos/{{produtoId}}."
         },
         {
           "name": "Atualizar Produto (ADMIN/GERENTE)",
