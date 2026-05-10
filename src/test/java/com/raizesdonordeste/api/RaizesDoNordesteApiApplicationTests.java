@@ -1,13 +1,12 @@
-package org.marcosdantas.raizesdonordeste;
+package com.raizesdonordeste.api;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class RaizesdonordesteApplicationTests {
+class RaizesDoNordesteApiApplicationTests {
 
   @Test
   void contextLoads() {
   }
-
 }

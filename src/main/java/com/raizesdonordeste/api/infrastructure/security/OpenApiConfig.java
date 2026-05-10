@@ -22,8 +22,8 @@ public class OpenApiConfig {
             .description("API REST para gestão de unidades, cardápio, pedidos, pagamentos e fidelidade da rede Raízes do Nordeste.")
             .version("v1")
             .contact(new Contact()
-                .name("Equipe Raízes do Nordeste")
-                .email("contato@raizes.com")))
+                .name("Marcos Dantas")
+                .url("https://github.com/marcoosdantas/raizes-do-nordeste-api")))
         .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME))
         .components(new Components()
             .addSecuritySchemes(
@@ -36,4 +36,3 @@ public class OpenApiConfig {
             ));
   }
 }
-
