@@ -126,23 +126,29 @@ Variáveis usadas na coleção:
 | Variável | Valor inicial |
 |---|---|
 | `baseUrl` | `http://localhost:8080` |
-| `token` | preenchido após login |
+| `token` | preenchido no login cliente para compatibilidade |
+| `tokenCliente` | preenchido em **Auth / T01 - Login Cliente** |
+| `tokenAdmin` | preenchido em **Auth / Login Admin** |
+| `tokenGerente` | preenchido em **Auth / Login Gerente** |
 | `unidadeId` | preenchido durante os testes |
 | `produtoId` | preenchido durante os testes |
 | `pedidoId` | preenchido durante os testes |
+| `pagamentoId` | preenchido durante os testes de pagamento |
 
 ### Ordem sugerida de execução da coleção Postman
 
-1. **Auth / Login válido (T01)** - copiar `accessToken` para `{{token}}`
-2. **Produtos / Listar produtos** - copiar um `produtoId`
-3. **Unidades / Listar unidades** - copiar um `unidadeId`
-4. **Pedidos / Criar pedido (T06)** - usar `produtoId` e `unidadeId`
-5. **Pagamento / Solicitar pagamento** - usar o `pedidoId`
-6. **Pagamento / Callback aprovado (T07)** - validar pedido como `PAGO`
-7. **Pagamento / Callback recusado (T08)** - criar novo pedido e testar recusa
-8. **Fidelidade / Consultar saldo** - validar pontos acumulados
-9. **Erros / Sem token (T02)** - executar sem header `Authorization`
-10. **Erros / Role inválida (T03)** - usar token de CLIENTE em rota de ADMIN
+1. **Auth / T01 - Login Cliente** - preenche `{{tokenCliente}}`
+2. **Auth / Login Admin** - preenche `{{tokenAdmin}}`
+3. **Auth / Login Gerente** - preenche `{{tokenGerente}}`
+4. **Produtos / Listar produtos** - copiar um `produtoId`
+5. **Unidades / Listar unidades** - copiar um `unidadeId`
+6. **Pedidos / Criar pedido (T06)** - usa `{{tokenCliente}}`
+7. **Pagamento / Solicitar pagamento** - usa `{{tokenCliente}}`
+8. **Pagamento / Callback aprovado (T07)** - rota pública do gateway mock
+9. **Fidelidade / Consultar saldo** - usa `{{tokenCliente}}`
+10. **Unidades / Criar Unidade (ADMIN)** - usa `{{tokenAdmin}}`
+11. **Estoque / Entrada Estoque (GERENTE)** - usa `{{tokenGerente}}`
+12. **Erros / Role inválida (T03)** - usa `{{tokenCliente}}` em rota de ADMIN
 
 ## Limitações Conhecidas
 

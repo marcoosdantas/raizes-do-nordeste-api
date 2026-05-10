@@ -36,7 +36,7 @@
           }
         },
         {
-          "name": "T01 - Login válido",
+          "name": "T01 - Login Cliente",
           "event": [
             {
               "listen": "test",
@@ -48,7 +48,12 @@
                   "});",
                   "",
                   "const json = pm.response.json();",
+                  "pm.test(\"accessToken presente\", function () {",
+                  "  pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "",
                   "if (json.accessToken) {",
+                  "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
                   "  pm.collectionVariables.set(\"token\", json.accessToken);",
                   "}"
                 ]
@@ -77,7 +82,108 @@
                 "login"
               ]
             }
-          }
+          },
+          "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}}. Também atualiza {{token}} por compatibilidade."
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.test(\"accessToken presente\", function () {",
+                  "  pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set(\"tokenAdmin\", json.accessToken);",
+                  "  pm.collectionVariables.set(\"tokenPrivilegiado\", json.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@raizes.com\",\n  \"senha\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "description": "Autentica ADMIN e salva accessToken em {{tokenAdmin}} para rotas administrativas."
+        },
+        {
+          "name": "Login Gerente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const json = pm.response.json();",
+                  "pm.test(\"accessToken presente\", function () {",
+                  "  pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set(\"tokenGerente\", json.accessToken);",
+                  "  pm.collectionVariables.set(\"tokenPrivilegiado\", json.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"gerente@raizes.com\",\n  \"senha\": \"Gerente@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "description": "Autentica GERENTE e salva accessToken em {{tokenGerente}} para estoque, produtos e listagem de pedidos."
         },
         {
           "name": "Erro - Login inválido",
@@ -119,7 +225,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -144,7 +250,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -170,7 +276,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenAdmin}}",
                   "type": "string"
                 }
               ]
@@ -195,7 +301,8 @@
                 "unidades"
               ]
             }
-          }
+          },
+          "description": "Requer {{tokenAdmin}}. Execute Auth / Login Admin antes."
         },
         {
           "name": "Atualizar Unidade Parcial (ADMIN)",
@@ -205,7 +312,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenAdmin}}",
                   "type": "string"
                 }
               ]
@@ -231,7 +338,8 @@
                 "{{unidadeId}}"
               ]
             }
-          }
+          },
+          "description": "Requer {{tokenAdmin}}. Execute Auth / Login Admin antes."
         },
         {
           "name": "Erro - Sem token",
@@ -311,7 +419,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenPrivilegiado}}",
                   "type": "string"
                 }
               ]
@@ -346,7 +454,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenPrivilegiado}}",
                   "type": "string"
                 }
               ]
@@ -404,7 +512,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenPrivilegiado}}",
                   "type": "string"
                 }
               ]
@@ -425,7 +533,8 @@
                 }
               ]
             }
-          }
+          },
+          "description": "Requer {{tokenGerente}}. Execute Auth / Login Gerente antes."
         },
         {
           "name": "Entrada Estoque (GERENTE)",
@@ -435,7 +544,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenGerente}}",
                   "type": "string"
                 }
               ]
@@ -461,7 +570,8 @@
                 "entrada"
               ]
             }
-          }
+          },
+          "description": "Requer {{tokenGerente}}. Execute Auth / Login Gerente antes."
         },
         {
           "name": "Saída Estoque (GERENTE)",
@@ -471,7 +581,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenGerente}}",
                   "type": "string"
                 }
               ]
@@ -497,7 +607,8 @@
                 "saida"
               ]
             }
-          }
+          },
+          "description": "Requer {{tokenGerente}}. Execute Auth / Login Gerente antes."
         },
         {
           "name": "Erro - Estoque insuficiente",
@@ -518,7 +629,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenGerente}}",
                   "type": "string"
                 }
               ]
@@ -534,7 +645,7 @@
               "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"produtoId\": \"{{produtoId}}\",\n  \"quantidade\": 99999\n}"
             }
           },
-          "description": "Erro esperado: 409"
+          "description": "Erro esperado: 409\nRequer {{tokenGerente}}. Execute Auth / Login Gerente antes."
         }
       ]
     },
@@ -567,7 +678,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -592,7 +703,8 @@
                 "pedidos"
               ]
             }
-          }
+          },
+          "description": "Requer {{tokenCliente}}. Cria pedido com status AGUARDANDO_PAGAMENTO."
         },
         {
           "name": "T09 - Filtro por canalPedido",
@@ -602,7 +714,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenPrivilegiado}}",
                   "type": "string"
                 }
               ]
@@ -639,7 +751,8 @@
                 }
               ]
             }
-          }
+          },
+          "description": "Requer {{tokenGerente}}. Lista pedidos filtrando canalPedido=APP."
         },
         {
           "name": "Buscar Pedido por ID",
@@ -649,7 +762,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -675,7 +788,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenGerente}}",
                   "type": "string"
                 }
               ]
@@ -712,7 +825,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenPrivilegiado}}",
                   "type": "string"
                 }
               ]
@@ -748,7 +861,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -779,7 +892,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -903,7 +1016,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -929,7 +1042,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -955,7 +1068,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -1002,7 +1115,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -1059,7 +1172,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -1075,7 +1188,7 @@
               "raw": "{\n  \"nome\": \"Raízes Teste\",\n  \"cidade\": \"Natal\",\n  \"estado\": \"RN\",\n  \"ativa\": true,\n  \"formato\": \"COMPLETO\",\n  \"horarioAbertura\": \"07:00\",\n  \"horarioFechamento\": \"22:00\"\n}"
             }
           },
-          "description": "Token CLIENTE deve retornar 403"
+          "description": "Usa {{tokenCliente}} em rota ADMIN para validar 403 ACESSO_NEGADO."
         },
         {
           "name": "T04 - Canal ausente",
@@ -1095,7 +1208,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -1131,7 +1244,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -1168,7 +1281,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{tokenCliente}}",
                   "type": "string"
                 }
               ]
@@ -1199,6 +1312,22 @@
       "value": ""
     },
     {
+      "key": "tokenCliente",
+      "value": ""
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenGerente",
+      "value": ""
+    },
+    {
+      "key": "tokenPrivilegiado",
+      "value": ""
+    },
+    {
       "key": "unidadeId",
       "value": ""
     },
@@ -1208,6 +1337,10 @@
     },
     {
       "key": "pedidoId",
+      "value": ""
+    },
+    {
+      "key": "pagamentoId",
       "value": ""
     }
   ]
