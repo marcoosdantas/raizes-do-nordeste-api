@@ -1,0 +1,115 @@
+@startuml
+title Modelo de Dados - MongoDB
+skinparam linetype ortho
+
+entity "usuarios" as USR {
+  * id : String <<Document Id>>
+  --
+  nome : String
+  email : String
+  senhaHash : String
+  perfil : PerfilUsuario
+  ativo : boolean
+  consentimentoLGPD : boolean
+  dataConsentimento : LocalDateTime
+  createdAt : LocalDateTime
+}
+
+entity "unidades" as UND {
+  * id : String <<Document Id>>
+  --
+  nome : String
+  cidade : String
+  estado : String
+  ativa : boolean
+  formato : FormatoOperacao
+  horarioAbertura : String
+  horarioFechamento : String
+}
+
+entity "produtos" as PRD {
+  * id : String <<Document Id>>
+  --
+  nome : String
+  descricao : String
+  categoria : String
+  preco : BigDecimal
+  disponivel : boolean
+  sazonal : boolean
+  periodoDisponivel : String
+}
+
+entity "estoque" as EST {
+  * id : String <<Document Id>>
+  --
+  unidadeId : String <<ref unidades.id>>
+  produtoId : String <<ref produtos.id>>
+  quantidadeDisponivel : int
+  quantidadeMinima : int
+  updatedAt : LocalDateTime
+}
+
+entity "pedidos" as PED {
+  * id : String <<Document Id>>
+  --
+  clienteId : String <<ref usuarios.id>>
+  unidadeId : String <<ref unidades.id>>
+  canalPedido : CanalPedido
+  status : StatusPedido
+  total : BigDecimal
+  formaPagamento : String
+  createdAt : LocalDateTime
+  updatedAt : LocalDateTime
+}
+
+entity "ItemPedido" as ITP {
+  <<embedded>>
+  --
+  produtoId : String
+  nomeProduto : String
+  quantidade : int
+  precoUnitario : BigDecimal
+  subtotal : BigDecimal
+}
+
+entity "pagamentos" as PAG {
+  * id : String <<Document Id>>
+  --
+  pedidoId : String <<ref pedidos.id>>
+  valorTotal : BigDecimal
+  status : StatusPagamento
+  provedorMock : String
+  payload : Map<String,Object>
+  createdAt : LocalDateTime
+}
+
+entity "pontos_clientes" as PTS {
+  * id : String <<Document Id>>
+  --
+  clienteId : String <<ref usuarios.id>>
+  saldoPontos : int
+  totalAcumulado : int
+  updatedAt : LocalDateTime
+}
+
+entity "auditoria" as AUD {
+  * id : String <<Document Id>>
+  --
+  acao : String
+  entidade : String
+  entidadeId : String
+  usuarioId : String <<ref usuarios.id>>
+  detalhe : String
+  timestamp : LocalDateTime
+}
+
+USR ||--o{ PED : "clienteId"
+UND ||--o{ PED : "unidadeId"
+UND ||--o{ EST : "unidadeId"
+PRD ||--o{ EST : "produtoId"
+PED ||--|{ ITP : "embedded"
+PED ||--o{ PAG : "pedidoId"
+USR ||--o| PTS : "clienteId"
+USR ||--o{ AUD : "usuarioId"
+
+@enduml

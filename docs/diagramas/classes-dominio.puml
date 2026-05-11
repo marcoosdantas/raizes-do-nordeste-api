@@ -1,0 +1,149 @@
+@startuml
+title Diagrama de Classes - Domínio
+skinparam classAttributeIconSize 0
+
+enum PerfilUsuario {
+  ADMIN
+  GERENTE
+  ATENDENTE
+  COZINHA
+  CLIENTE
+}
+
+enum FormatoOperacao {
+  COMPLETO
+  REDUZIDO
+}
+
+enum CanalPedido {
+  APP
+  TOTEM
+  BALCAO
+  PICKUP
+  WEB
+}
+
+enum StatusPedido {
+  AGUARDANDO_PAGAMENTO
+  PAGO
+  EM_PREPARO
+  PRONTO
+  ENTREGUE
+  CANCELADO
+}
+
+enum StatusPagamento {
+  PENDENTE
+  APROVADO
+  RECUSADO
+}
+
+class Usuario {
+  -String id
+  -String nome
+  -String email
+  -String senhaHash
+  -PerfilUsuario perfil
+  -boolean ativo
+  -boolean consentimentoLGPD
+  -LocalDateTime dataConsentimento
+  -LocalDateTime createdAt
+}
+
+class Unidade {
+  -String id
+  -String nome
+  -String cidade
+  -String estado
+  -boolean ativa
+  -FormatoOperacao formato
+  -String horarioAbertura
+  -String horarioFechamento
+}
+
+class Produto {
+  -String id
+  -String nome
+  -String descricao
+  -String categoria
+  -BigDecimal preco
+  -boolean disponivel
+  -boolean sazonal
+  -String periodoDisponivel
+}
+
+class EstoqueItem {
+  -String id
+  -String unidadeId
+  -String produtoId
+  -int quantidadeDisponivel
+  -int quantidadeMinima
+  -LocalDateTime updatedAt
+}
+
+class Pedido {
+  -String id
+  -String clienteId
+  -String unidadeId
+  -CanalPedido canalPedido
+  -List~ItemPedido~ itens
+  -StatusPedido status
+  -BigDecimal total
+  -String formaPagamento
+  -LocalDateTime createdAt
+  -LocalDateTime updatedAt
+}
+
+class ItemPedido {
+  <<embedded>>
+  -String produtoId
+  -String nomeProduto
+  -int quantidade
+  -BigDecimal precoUnitario
+  -BigDecimal subtotal
+}
+
+class Pagamento {
+  -String id
+  -String pedidoId
+  -BigDecimal valorTotal
+  -StatusPagamento status
+  -String provedorMock
+  -Map~String,Object~ payload
+  -LocalDateTime createdAt
+}
+
+class PontosCliente {
+  -String id
+  -String clienteId
+  -int saldoPontos
+  -int totalAcumulado
+  -LocalDateTime updatedAt
+}
+
+class HistoricoAuditoria {
+  -String id
+  -String acao
+  -String entidade
+  -String entidadeId
+  -String usuarioId
+  -String detalhe
+  -LocalDateTime timestamp
+}
+
+Usuario "1" --> "0..*" Pedido : clienteId
+Usuario "1" --> "0..1" PontosCliente : clienteId
+Usuario "1" --> "0..*" HistoricoAuditoria : usuarioId
+Unidade "1" --> "0..*" Pedido : unidadeId
+Unidade "1" --> "0..*" EstoqueItem : unidadeId
+Produto "1" --> "0..*" EstoqueItem : produtoId
+Pedido "1" *-- "1..*" ItemPedido : embedded
+Pedido "1" --> "0..*" Pagamento : pedidoId
+
+Usuario ..> PerfilUsuario
+Unidade ..> FormatoOperacao
+Pedido ..> CanalPedido
+Pedido ..> StatusPedido
+Pagamento ..> StatusPagamento
+
+@enduml

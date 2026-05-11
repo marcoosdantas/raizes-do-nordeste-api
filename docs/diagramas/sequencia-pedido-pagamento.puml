@@ -1,0 +1,76 @@
+@startuml
+title Sequência - Pedido, Pagamento e Fidelidade
+skinparam sequenceMessageAlign center
+
+actor "Cliente" as CLI
+actor "Gateway\n(Mock)" as GTW
+participant "PedidoController" as PC
+participant "PedidoService" as PS
+participant "PagamentoController" as PAC
+participant "PagamentoService" as PAS
+participant "PaymentMockService" as PMS
+participant "AuditoriaService" as AS
+database "MongoDB" as DB
+
+== Pedido ==
+
+CLI -> PC : POST /pedidos
+PC -> PS : criar(request, usuarioLogado)
+PS -> DB : validar unidade ativa
+PS -> DB : validar produto e estoque por item
+
+alt estoque insuficiente ou unidade inválida
+  PS --> PC : exceção de negócio
+  PC --> CLI : erro padronizado
+else dados válidos
+  PS -> PS : calcular subtotais e total
+  PS -> DB : salvar Pedido\nAGUARDANDO_PAGAMENTO
+  PS -> AS : registrarAcao("CRIAR_PEDIDO", ...)
+  AS -> DB : salvar auditoria
+  PC --> CLI : 201 PedidoResponse
+end
+
+== Solicitação de pagamento ==
+
+CLI -> PAC : POST /pagamentos/solicitar
+PAC -> PAS : solicitar(request, usuarioLogado)
+PAS -> DB : buscar pedido
+
+alt pedido inexistente, não pertence ao cliente ou status inválido
+  PAS --> PAC : exceção
+  PAC --> CLI : erro padronizado
+else pedido apto para pagamento
+  PAS -> PMS : criarPagamentoPendente(pedido)
+  PMS --> PAS : Pagamento PENDENTE
+  PAS -> DB : salvar pagamento
+  PAS -> AS : registrarAcao("PAGAMENTO_SOLICITADO", ...)
+  AS -> DB : salvar auditoria
+  PAC --> CLI : 200 PagamentoSolicitacaoResponse
+end
+
+== Callback mock ==
+
+GTW -> PAC : POST /pagamentos/mock/callback
+PAC -> PAS : callback(request)
+PAS -> DB : buscar pedido e pagamento
+PAS -> PMS : atualizarStatusPorCallback(pagamento, aprovado)
+PAS -> DB : salvar pagamento atualizado
+
+alt aprovado = true
+  PAS -> DB : deduzir estoque dos itens
+  PAS -> DB : atualizar pedido para PAGO
+  PAS -> DB : acumular pontos do cliente
+  PAS -> AS : registrarAcao("PAGAMENTO_APROVADO", ...)
+  AS -> DB : salvar auditoria
+  PAC --> GTW : 200 PagamentoResponse APROVADO
+else aprovado = false
+  note right of PAS
+    Pedido permanece
+    AGUARDANDO_PAGAMENTO
+  end note
+  PAS -> AS : registrarAcao("PAGAMENTO_RECUSADO", ...)
+  AS -> DB : salvar auditoria
+  PAC --> GTW : 200 PagamentoResponse RECUSADO
+end
+
+@enduml

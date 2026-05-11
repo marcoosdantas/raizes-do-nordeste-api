@@ -1,0 +1,23 @@
+@startuml
+skinparam rectangle {
+  BackgroundColor<<api>> #DDEEFF
+  BackgroundColor<<app>> #DDFFDD
+  BackgroundColor<<domain>> #FFEECC
+  BackgroundColor<<infra>> #FFE0E0
+  FontSize 14
+}
+skinparam defaultFontSize 13
+skinparam padding 8
+
+rectangle "API Layer\n(Controllers + Handler)" <<api>>
+rectangle "Application Layer\n(Services + DTOs)" <<app>>
+rectangle "Domain Layer\n(Model + Enums + Exceptions)" <<domain>>
+rectangle "Infrastructure Layer\n(Security + Repositories + Audit + Payment + Seed + Config)" <<infra>>
+database "MongoDB" as DB
+
+[API Layer\n(Controllers + Handler)] -down-> [Application Layer\n(Services + DTOs)]
+[Application Layer\n(Services + DTOs)] -down-> [Domain Layer\n(Model + Enums + Exceptions)]
+[Application Layer\n(Services + DTOs)] -down-> [Infrastructure Layer\n(Security + Repositories + Audit + Payment + Seed + Config)]
+[Infrastructure Layer\n(Security + Repositories + Audit + Payment + Seed + Config)] -down-> DB
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml
+title Casos de Uso - Raízes do Nordeste API
+left to right direction
+skinparam actorStyle awesome
+
+actor "Usuário\nautenticado" as AUTH
+actor "Cliente\n(App/Web/Totem)" as CLI
+actor "Atendente\n(Balcão)" as ATD
+actor "Cozinha" as COZ
+actor "Gestor" as GST
+actor "Gerente" as GER
+actor "Administrador" as ADM
+actor "Gateway de Pagamento\n(Mock)" as GTW
+
+rectangle "Raízes do Nordeste API" {
+  usecase "Registrar conta" as UC01
+  usecase "Fazer login" as UC02
+  usecase "Consultar cardápio" as UC03
+  usecase "Consultar unidades" as UC04
+  usecase "Realizar pedido" as UC05
+  usecase "Solicitar pagamento" as UC06
+  usecase "Acompanhar pedido" as UC07
+  usecase "Usar fidelidade" as UC08
+  usecase "Atualizar status do pedido" as UC09
+  usecase "Gerenciar produtos" as UC10
+  usecase "Gerenciar unidades" as UC11
+  usecase "Consultar estoque" as UC12
+  usecase "Movimentar estoque" as UC15
+  usecase "Listar e cancelar pedidos" as UC13
+  usecase "Processar callback de pagamento" as UC14
+}
+
+CLI --|> AUTH
+ATD --|> AUTH
+COZ --|> AUTH
+GST --|> AUTH
+GER --|> GST
+ADM --|> GST
+
+AUTH --> UC02
+AUTH --> UC04
+
+CLI --> UC01
+CLI --> UC03
+CLI --> UC05
+CLI --> UC06
+CLI --> UC07
+CLI --> UC08
+
+ATD --> UC09
+
+COZ --> UC09
+
+GST --> UC09
+GST --> UC10
+GST --> UC12
+GST --> UC13
+
+GER --> UC15
+
+ADM --> UC11
+
+GTW --> UC14
+
+@enduml
