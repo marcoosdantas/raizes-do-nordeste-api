@@ -7,17 +7,18 @@ skinparam rectangle {
   FontSize 14
 }
 skinparam defaultFontSize 13
-skinparam padding 8
 
-rectangle "API Layer\n(Controllers + Handler)" <<api>>
-rectangle "Application Layer\n(Services + DTOs)" <<app>>
-rectangle "Domain Layer\n(Model + Enums + Exceptions)" <<domain>>
-rectangle "Infrastructure Layer\n(Security + Repositories + Audit + Payment + Seed + Config)" <<infra>>
+title Arquitetura em Camadas
+
+rectangle "Camada de API\n(Controladores + Tratamento de erros)" as API <<api>>
+rectangle "Camada de Aplicação\n(Serviços + DTOs)" as APP <<app>>
+rectangle "Camada de Domínio\n(Modelos + Enums + Exceções)" as DOMAIN <<domain>>
+rectangle "Camada de Infraestrutura\n(Segurança + Repositórios + Auditoria + Pagamento Mock + Seed + Configuração)" as INFRA <<infra>>
 database "MongoDB" as DB
 
-[API Layer\n(Controllers + Handler)] -down-> [Application Layer\n(Services + DTOs)]
-[Application Layer\n(Services + DTOs)] -down-> [Domain Layer\n(Model + Enums + Exceptions)]
-[Application Layer\n(Services + DTOs)] -down-> [Infrastructure Layer\n(Security + Repositories + Audit + Payment + Seed + Config)]
-[Infrastructure Layer\n(Security + Repositories + Audit + Payment + Seed + Config)] -down-> DB
+API -down-> APP
+APP -down-> DOMAIN
+APP -down-> INFRA
+INFRA -down-> DB
 
 @enduml
