@@ -1116,43 +1116,6 @@
               ]
             }
           }
-        },
-        {
-          "name": "T10 - Erro saldo insuficiente",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{baseUrl}}/fidelidade/resgatar",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "fidelidade",
-                "resgatar"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{tokenCliente}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"pontos\": 100\n}"
-            }
-          },
-          "description": "T10 resgate sem saldo"
         }
       ]
     },
@@ -1284,7 +1247,7 @@
           "description": "Quantidade maior que estoque deve retornar 409"
         },
         {
-          "name": "T10 - Saldo insuficiente",
+          "name": "T10 - Resgate sem saldo",
           "request": {
             "method": "POST",
             "url": {
@@ -1319,6 +1282,2274 @@
             }
           },
           "description": "Cliente sem saldo deve retornar erro coerente"
+        }
+      ]
+    },
+    {
+      "name": "CTs - Plano de Testes",
+      "description": "Pasta organizada para execução dos cenários T01 a T13 descritos no relatório técnico. Cada subpasta CTxx contém os endpoints necessários para executar o cenário de forma isolada, em ordem numérica. Recomenda-se usar banco com seed aplicado. Alguns CTs alteram estado no banco, como pagamento aprovado, pagamento recusado e estoque; se necessário, reinicie a base ou execute com produtos/unidades que ainda tenham estoque.",
+      "item": [
+        {
+          "name": "CT01 - Login válido",
+          "description": "Valida autenticação do cliente seedado e captura token.",
+          "item": [
+            {
+              "name": "01 - T01 - Login válido",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            }
+          ]
+        },
+        {
+          "name": "CT02 - Acesso sem token",
+          "description": "Valida acesso negado quando não há header Authorization.",
+          "item": [
+            {
+              "name": "01 - T02 - Acesso sem token",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 401\", function () { pm.response.to.have.status(401); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"erro NAO_AUTENTICADO\", function () { pm.expect(json.error).to.eql(\"NAO_AUTENTICADO\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "description": "GET /pedidos sem token. Esperado: 401 NAO_AUTENTICADO."
+            }
+          ]
+        },
+        {
+          "name": "CT03 - Acesso com perfil sem permissão",
+          "description": "Valida bloqueio de CLIENTE em rota exclusiva de ADMIN.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - T03 - Criar unidade com token CLIENTE",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 403\", function () { pm.response.to.have.status(403); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"erro ACESSO_NEGADO\", function () { pm.expect(json.error).to.eql(\"ACESSO_NEGADO\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"Raízes Teste Bloqueado\",\n  \"cidade\": \"Recife\",\n  \"estado\": \"PE\",\n  \"ativa\": true,\n  \"formato\": \"COMPLETO\",\n  \"horarioAbertura\": \"08:00\",\n  \"horarioFechamento\": \"22:00\"\n}"
+                }
+              },
+              "description": "Usa token CLIENTE para tentar criar unidade. Esperado: 403 ACESSO_NEGADO."
+            }
+          ]
+        },
+        {
+          "name": "CT04 - Canal do pedido ausente",
+          "description": "Valida criação de pedido sem canalPedido.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - Listar unidades e salvar unidadeId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"há pelo menos uma unidade\", function () { pm.expect(json).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(json) && json.length && json[0].id) { pm.collectionVariables.set(\"unidadeId\", json[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista unidades e salva o primeiro id retornado em {{unidadeId}}."
+            },
+            {
+              "name": "03 - Listar produtos e salvar produtoId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "const content = json.content || json;",
+                      "pm.test(\"há pelo menos um produto\", function () { pm.expect(content).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(content) && content.length && content[0].id) { pm.collectionVariables.set(\"produtoId\", content[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/produtos?page=0&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "produtos"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista produtos públicos e salva o primeiro id retornado em {{produtoId}}."
+            },
+            {
+              "name": "04 - T04 - Criar pedido sem canalPedido",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 ou 422\", function () { pm.expect([400, 422]).to.include(pm.response.code); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"erro aponta canalPedido\", function () { pm.expect(JSON.stringify(json)).to.include(\"canalPedido\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{{produtoId}}\",\n      \"quantidade\": 1\n    }\n  ],\n  \"formaPagamento\": \"CARTAO\"\n}"
+                }
+              },
+              "description": "Pedido sem campo canalPedido. Esperado: 400 ou 422 com referência a canalPedido."
+            }
+          ]
+        },
+        {
+          "name": "CT05 - Estoque insuficiente",
+          "description": "Valida regra de estoque insuficiente na criação do pedido.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - Listar unidades e salvar unidadeId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"há pelo menos uma unidade\", function () { pm.expect(json).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(json) && json.length && json[0].id) { pm.collectionVariables.set(\"unidadeId\", json[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista unidades e salva o primeiro id retornado em {{unidadeId}}."
+            },
+            {
+              "name": "03 - Listar produtos e salvar produtoId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "const content = json.content || json;",
+                      "pm.test(\"há pelo menos um produto\", function () { pm.expect(content).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(content) && content.length && content[0].id) { pm.collectionVariables.set(\"produtoId\", content[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/produtos?page=0&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "produtos"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista produtos públicos e salva o primeiro id retornado em {{produtoId}}."
+            },
+            {
+              "name": "04 - T05 - Criar pedido com quantidade acima do estoque",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 409\", function () { pm.response.to.have.status(409); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"erro ESTOQUE_INSUFICIENTE\", function () { pm.expect(json.error).to.eql(\"ESTOQUE_INSUFICIENTE\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{{produtoId}}\",\n      \"quantidade\": 99999\n    }\n  ],\n  \"formaPagamento\": \"CARTAO\"\n}"
+                }
+              },
+              "description": "Quantidade muito acima do estoque disponível. Esperado: 409 ESTOQUE_INSUFICIENTE."
+            }
+          ]
+        },
+        {
+          "name": "CT06 - Pedido válido criado",
+          "description": "Valida criação de pedido com dados corretos e captura pedidoId.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - Listar unidades e salvar unidadeId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"há pelo menos uma unidade\", function () { pm.expect(json).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(json) && json.length && json[0].id) { pm.collectionVariables.set(\"unidadeId\", json[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista unidades e salva o primeiro id retornado em {{unidadeId}}."
+            },
+            {
+              "name": "03 - Listar produtos e salvar produtoId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "const content = json.content || json;",
+                      "pm.test(\"há pelo menos um produto\", function () { pm.expect(content).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(content) && content.length && content[0].id) { pm.collectionVariables.set(\"produtoId\", content[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/produtos?page=0&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "produtos"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista produtos públicos e salva o primeiro id retornado em {{produtoId}}."
+            },
+            {
+              "name": "04 - T06 - Pedido válido criado",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"status AGUARDANDO_PAGAMENTO\", function () { pm.expect(json.status).to.eql(\"AGUARDANDO_PAGAMENTO\"); });",
+                      "pm.test(\"canalPedido APP\", function () { pm.expect(json.canalPedido).to.eql(\"APP\"); });",
+                      "if (json.id) { pm.collectionVariables.set(\"pedidoId\", json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{{produtoId}}\",\n      \"quantidade\": 2\n    }\n  ],\n  \"formaPagamento\": \"CARTAO\"\n}"
+                }
+              },
+              "description": "Cria pedido válido com canalPedido APP e salva o id em {{pedidoId}}."
+            }
+          ]
+        },
+        {
+          "name": "CT07 - Pagamento aprovado",
+          "description": "Executa fluxo completo: login, dados base, pedido, solicitar pagamento e callback aprovado.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - Listar unidades e salvar unidadeId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"há pelo menos uma unidade\", function () { pm.expect(json).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(json) && json.length && json[0].id) { pm.collectionVariables.set(\"unidadeId\", json[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista unidades e salva o primeiro id retornado em {{unidadeId}}."
+            },
+            {
+              "name": "03 - Listar produtos e salvar produtoId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "const content = json.content || json;",
+                      "pm.test(\"há pelo menos um produto\", function () { pm.expect(content).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(content) && content.length && content[0].id) { pm.collectionVariables.set(\"produtoId\", content[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/produtos?page=0&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "produtos"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista produtos públicos e salva o primeiro id retornado em {{produtoId}}."
+            },
+            {
+              "name": "04 - Criar pedido válido",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"status AGUARDANDO_PAGAMENTO\", function () { pm.expect(json.status).to.eql(\"AGUARDANDO_PAGAMENTO\"); });",
+                      "pm.test(\"canalPedido APP\", function () { pm.expect(json.canalPedido).to.eql(\"APP\"); });",
+                      "if (json.id) { pm.collectionVariables.set(\"pedidoId\", json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{{produtoId}}\",\n      \"quantidade\": 2\n    }\n  ],\n  \"formaPagamento\": \"CARTAO\"\n}"
+                }
+              },
+              "description": "Cria pedido válido com canalPedido APP e salva o id em {{pedidoId}}."
+            },
+            {
+              "name": "05 - Solicitar pagamento",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"pagamento pendente\", function () { pm.expect(json.status).to.eql(\"PENDENTE\"); });",
+                      "if (json.pagamentoId || json.id) { pm.collectionVariables.set(\"pagamentoId\", json.pagamentoId || json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pagamentos/solicitar",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pagamentos",
+                    "solicitar"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pedidoId\": \"{{pedidoId}}\"\n}"
+                }
+              },
+              "description": "Cria pagamento PENDENTE para o pedido salvo em {{pedidoId}}."
+            },
+            {
+              "name": "06 - T07 - Pagamento aprovado",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"pagamento APROVADO\", function () { pm.expect(json.status).to.eql(\"APROVADO\"); });",
+                      "if (json.pagamentoId || json.id) { pm.collectionVariables.set(\"pagamentoId\", json.pagamentoId || json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pagamentos/mock/callback",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pagamentos",
+                    "mock",
+                    "callback"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pedidoId\": \"{{pedidoId}}\",\n  \"aprovado\": true\n}"
+                }
+              },
+              "description": "Executa callback mock com aprovado=true. Esperado: pagamento APROVADO."
+            }
+          ]
+        },
+        {
+          "name": "CT08 - Pagamento recusado",
+          "description": "Executa fluxo completo com callback recusado.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - Listar unidades e salvar unidadeId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"há pelo menos uma unidade\", function () { pm.expect(json).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(json) && json.length && json[0].id) { pm.collectionVariables.set(\"unidadeId\", json[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista unidades e salva o primeiro id retornado em {{unidadeId}}."
+            },
+            {
+              "name": "03 - Listar produtos e salvar produtoId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "const content = json.content || json;",
+                      "pm.test(\"há pelo menos um produto\", function () { pm.expect(content).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(content) && content.length && content[0].id) { pm.collectionVariables.set(\"produtoId\", content[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/produtos?page=0&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "produtos"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista produtos públicos e salva o primeiro id retornado em {{produtoId}}."
+            },
+            {
+              "name": "04 - Criar pedido válido",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"status AGUARDANDO_PAGAMENTO\", function () { pm.expect(json.status).to.eql(\"AGUARDANDO_PAGAMENTO\"); });",
+                      "pm.test(\"canalPedido APP\", function () { pm.expect(json.canalPedido).to.eql(\"APP\"); });",
+                      "if (json.id) { pm.collectionVariables.set(\"pedidoId\", json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{{produtoId}}\",\n      \"quantidade\": 2\n    }\n  ],\n  \"formaPagamento\": \"CARTAO\"\n}"
+                }
+              },
+              "description": "Cria pedido válido com canalPedido APP e salva o id em {{pedidoId}}."
+            },
+            {
+              "name": "05 - Solicitar pagamento",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"pagamento pendente\", function () { pm.expect(json.status).to.eql(\"PENDENTE\"); });",
+                      "if (json.pagamentoId || json.id) { pm.collectionVariables.set(\"pagamentoId\", json.pagamentoId || json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pagamentos/solicitar",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pagamentos",
+                    "solicitar"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pedidoId\": \"{{pedidoId}}\"\n}"
+                }
+              },
+              "description": "Cria pagamento PENDENTE para o pedido salvo em {{pedidoId}}."
+            },
+            {
+              "name": "06 - T08 - Pagamento recusado",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"pagamento RECUSADO\", function () { pm.expect(json.status).to.eql(\"RECUSADO\"); });",
+                      "if (json.pagamentoId || json.id) { pm.collectionVariables.set(\"pagamentoId\", json.pagamentoId || json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pagamentos/mock/callback",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pagamentos",
+                    "mock",
+                    "callback"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pedidoId\": \"{{pedidoId}}\",\n  \"aprovado\": false\n}"
+                }
+              },
+              "description": "Executa callback mock com aprovado=false. Esperado: pagamento RECUSADO."
+            }
+          ]
+        },
+        {
+          "name": "CT09 - Filtro por canalPedido",
+          "description": "Cria pedido APP e usa GERENTE para consultar filtro por canal, status e unidade.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - Listar unidades e salvar unidadeId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"há pelo menos uma unidade\", function () { pm.expect(json).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(json) && json.length && json[0].id) { pm.collectionVariables.set(\"unidadeId\", json[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista unidades e salva o primeiro id retornado em {{unidadeId}}."
+            },
+            {
+              "name": "03 - Listar produtos e salvar produtoId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "const content = json.content || json;",
+                      "pm.test(\"há pelo menos um produto\", function () { pm.expect(content).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(content) && content.length && content[0].id) { pm.collectionVariables.set(\"produtoId\", content[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/produtos?page=0&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "produtos"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista produtos públicos e salva o primeiro id retornado em {{produtoId}}."
+            },
+            {
+              "name": "04 - Criar pedido APP",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"status AGUARDANDO_PAGAMENTO\", function () { pm.expect(json.status).to.eql(\"AGUARDANDO_PAGAMENTO\"); });",
+                      "pm.test(\"canalPedido APP\", function () { pm.expect(json.canalPedido).to.eql(\"APP\"); });",
+                      "if (json.id) { pm.collectionVariables.set(\"pedidoId\", json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{{produtoId}}\",\n      \"quantidade\": 2\n    }\n  ],\n  \"formaPagamento\": \"CARTAO\"\n}"
+                }
+              },
+              "description": "Cria pedido válido com canalPedido APP e salva o id em {{pedidoId}}."
+            },
+            {
+              "name": "05 - Login Gerente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenGerente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"tokenPrivilegiado\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"gerente@raizes.com\",\n  \"senha\": \"Gerente@123\"\n}"
+                }
+              },
+              "description": "Autentica GERENTE e salva accessToken em {{tokenGerente}}, {{tokenPrivilegiado}} e {{token}}."
+            },
+            {
+              "name": "06 - T09 - Filtrar pedidos por canalPedido",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"response paginado\", function () { pm.expect(json).to.have.property(\"content\"); });",
+                      "pm.test(\"itens retornados respeitam canal APP\", function () { (json.content || []).forEach(item => pm.expect(item.canalPedido).to.eql(\"APP\")); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos?canalPedido=APP&status=AGUARDANDO_PAGAMENTO&unidadeId={{unidadeId}}&page=0&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ],
+                  "query": [
+                    {
+                      "key": "canalPedido",
+                      "value": "APP"
+                    },
+                    {
+                      "key": "status",
+                      "value": "AGUARDANDO_PAGAMENTO"
+                    },
+                    {
+                      "key": "unidadeId",
+                      "value": "{{unidadeId}}"
+                    },
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGerente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista pedidos filtrando canalPedido=APP, status=AGUARDANDO_PAGAMENTO e unidadeId."
+            }
+          ]
+        },
+        {
+          "name": "CT10 - Resgate sem saldo",
+          "description": "Valida erro de regra de negócio ao resgatar pontos sem saldo suficiente.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - T10 - Resgate sem saldo",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status de regra de negócio\", function () { pm.expect([400, 409]).to.include(pm.response.code); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"mensagem de saldo insuficiente\", function () { pm.expect(JSON.stringify(json).toLowerCase()).to.include(\"saldo\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/fidelidade/resgatar",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "fidelidade",
+                    "resgatar"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pontos\": 100\n}"
+                }
+              },
+              "description": "Tenta resgatar 100 pontos. Esperado: erro de saldo insuficiente, normalmente HTTP 400."
+            }
+          ]
+        },
+        {
+          "name": "CT11 - Pedido com produto inexistente",
+          "description": "Valida POST /pedidos com produtoId inexistente, não GET /produtos.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - Listar unidades e salvar unidadeId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"há pelo menos uma unidade\", function () { pm.expect(json).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(json) && json.length && json[0].id) { pm.collectionVariables.set(\"unidadeId\", json[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista unidades e salva o primeiro id retornado em {{unidadeId}}."
+            },
+            {
+              "name": "03 - T11 - Pedido com produto inexistente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"erro RECURSO_NAO_ENCONTRADO\", function () { pm.expect(json.error).to.eql(\"RECURSO_NAO_ENCONTRADO\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    {\n      \"produtoId\": \"produto-inexistente\",\n      \"quantidade\": 1\n    }\n  ],\n  \"formaPagamento\": \"CARTAO\"\n}"
+                }
+              },
+              "description": "POST /pedidos com produtoId=produto-inexistente. Esperado: 404 RECURSO_NAO_ENCONTRADO."
+            }
+          ]
+        },
+        {
+          "name": "CT12 - Pedido com quantidade inválida",
+          "description": "Valida erro de validação em itens[0].quantidade.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - Listar unidades e salvar unidadeId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"há pelo menos uma unidade\", function () { pm.expect(json).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(json) && json.length && json[0].id) { pm.collectionVariables.set(\"unidadeId\", json[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista unidades e salva o primeiro id retornado em {{unidadeId}}."
+            },
+            {
+              "name": "03 - Listar produtos e salvar produtoId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "const content = json.content || json;",
+                      "pm.test(\"há pelo menos um produto\", function () { pm.expect(content).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(content) && content.length && content[0].id) { pm.collectionVariables.set(\"produtoId\", content[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/produtos?page=0&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "produtos"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista produtos públicos e salva o primeiro id retornado em {{produtoId}}."
+            },
+            {
+              "name": "04 - T12 - Pedido com quantidade inválida",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400 ou 422\", function () { pm.expect([400, 422]).to.include(pm.response.code); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"erro aponta quantidade\", function () { pm.expect(JSON.stringify(json)).to.include(\"quantidade\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{{produtoId}}\",\n      \"quantidade\": 0\n    }\n  ],\n  \"formaPagamento\": \"CARTAO\"\n}"
+                }
+              },
+              "description": "Pedido com quantidade igual a zero. Esperado: 400 ou 422 com erro em quantidade."
+            }
+          ]
+        },
+        {
+          "name": "CT13 - Registro de auditoria após pagamento aprovado",
+          "description": "Executa fluxo de pagamento aprovado. Como não há endpoint de auditoria, a evidência final deve ser conferida manualmente no MongoDB, coleção auditoria, procurando registro de PAGAMENTO_APROVADO.",
+          "item": [
+            {
+              "name": "01 - Login Cliente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"accessToken presente\", function () { pm.expect(json.accessToken).to.be.a(\"string\").and.not.empty; });",
+                      "if (json.accessToken) {",
+                      "  pm.collectionVariables.set(\"tokenCliente\", json.accessToken);",
+                      "  pm.collectionVariables.set(\"token\", json.accessToken);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"cliente@raizes.com\",\n  \"senha\": \"Cliente@123\"\n}"
+                }
+              },
+              "description": "Autentica CLIENTE e salva accessToken em {{tokenCliente}} e {{token}}."
+            },
+            {
+              "name": "02 - Listar unidades e salvar unidadeId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"há pelo menos uma unidade\", function () { pm.expect(json).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(json) && json.length && json[0].id) { pm.collectionVariables.set(\"unidadeId\", json[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/unidades",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "unidades"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista unidades e salva o primeiro id retornado em {{unidadeId}}."
+            },
+            {
+              "name": "03 - Listar produtos e salvar produtoId",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "const content = json.content || json;",
+                      "pm.test(\"há pelo menos um produto\", function () { pm.expect(content).to.be.an(\"array\").and.not.empty; });",
+                      "if (Array.isArray(content) && content.length && content[0].id) { pm.collectionVariables.set(\"produtoId\", content[0].id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/produtos?page=0&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "produtos"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "description": "Lista produtos públicos e salva o primeiro id retornado em {{produtoId}}."
+            },
+            {
+              "name": "04 - Criar pedido válido",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"status AGUARDANDO_PAGAMENTO\", function () { pm.expect(json.status).to.eql(\"AGUARDANDO_PAGAMENTO\"); });",
+                      "pm.test(\"canalPedido APP\", function () { pm.expect(json.canalPedido).to.eql(\"APP\"); });",
+                      "if (json.id) { pm.collectionVariables.set(\"pedidoId\", json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pedidos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pedidos"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"unidadeId\": \"{{unidadeId}}\",\n  \"canalPedido\": \"APP\",\n  \"itens\": [\n    {\n      \"produtoId\": \"{{produtoId}}\",\n      \"quantidade\": 2\n    }\n  ],\n  \"formaPagamento\": \"CARTAO\"\n}"
+                }
+              },
+              "description": "Cria pedido válido com canalPedido APP e salva o id em {{pedidoId}}."
+            },
+            {
+              "name": "05 - Solicitar pagamento",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"pagamento pendente\", function () { pm.expect(json.status).to.eql(\"PENDENTE\"); });",
+                      "if (json.pagamentoId || json.id) { pm.collectionVariables.set(\"pagamentoId\", json.pagamentoId || json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pagamentos/solicitar",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pagamentos",
+                    "solicitar"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenCliente}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pedidoId\": \"{{pedidoId}}\"\n}"
+                }
+              },
+              "description": "Cria pagamento PENDENTE para o pedido salvo em {{pedidoId}}."
+            },
+            {
+              "name": "06 - T13 - Callback aprovado que gera auditoria",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"pagamento APROVADO\", function () { pm.expect(json.status).to.eql(\"APROVADO\"); });",
+                      "if (json.pagamentoId || json.id) { pm.collectionVariables.set(\"pagamentoId\", json.pagamentoId || json.id); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/pagamentos/mock/callback",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "pagamentos",
+                    "mock",
+                    "callback"
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pedidoId\": \"{{pedidoId}}\",\n  \"aprovado\": true\n}"
+                }
+              },
+              "description": "CT T13. Executa callback aprovado, que é uma ação sensível auditada pela aplicação. Como a API não possui endpoint de auditoria, após esta requisição a evidência deve ser conferida manualmente no MongoDB, coleção auditoria, procurando registro com ação relacionada a PAGAMENTO_APROVADO para o pedidoId usado."
+            }
+          ]
         }
       ]
     }
