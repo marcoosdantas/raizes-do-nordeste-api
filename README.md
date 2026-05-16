@@ -121,34 +121,62 @@ Arquivo na raiz do projeto:
 raizes-postman-collection.json
 ```
 
+O plano detalhado dos cenários está em:
+
+```text
+PLANO_DE_TESTES.md
+```
+
 Variáveis usadas na coleção:
 
 | Variável | Valor inicial |
 |---|---|
 | `baseUrl` | `http://localhost:8080` |
 | `token` | preenchido no login cliente para compatibilidade |
-| `tokenCliente` | preenchido em **Auth / T01 - Login Cliente** |
-| `tokenAdmin` | preenchido em **Auth / Login Admin** |
-| `tokenGerente` | preenchido em **Auth / Login Gerente** |
-| `unidadeId` | preenchido durante os testes |
-| `produtoId` | preenchido durante os testes |
-| `pedidoId` | preenchido durante os testes |
-| `pagamentoId` | preenchido durante os testes de pagamento |
+| `tokenCliente` | preenchido nos logins de CLIENTE |
+| `tokenAdmin` | preenchido nos logins de ADMIN |
+| `tokenGerente` | preenchido nos logins de GERENTE |
+| `tokenPrivilegiado` | preenchido nos logins de ADMIN ou GERENTE |
+| `unidadeId` | preenchido durante os CTs que consultam unidades |
+| `produtoId` | preenchido durante os CTs que consultam produtos |
+| `pedidoId` | preenchido durante os CTs que criam pedidos |
+| `pagamentoId` | preenchido durante os CTs de pagamento |
 
-### Ordem sugerida de execução da coleção Postman
+### Execução dos CTs no Postman
 
-1. **Auth / T01 - Login Cliente** - preenche `{{tokenCliente}}`
-2. **Auth / Login Admin** - preenche `{{tokenAdmin}}`
-3. **Auth / Login Gerente** - preenche `{{tokenGerente}}`
-4. **Produtos / Listar produtos** - copiar um `produtoId`
-5. **Unidades / Listar unidades** - copiar um `unidadeId`
-6. **Pedidos / Criar pedido (T06)** - usa `{{tokenCliente}}`
-7. **Pagamento / Solicitar pagamento** - usa `{{tokenCliente}}`
-8. **Pagamento / Callback aprovado (T07)** - rota pública do gateway mock
-9. **Fidelidade / Consultar saldo** - usa `{{tokenCliente}}`
-10. **Unidades / Criar Unidade (ADMIN)** - usa `{{tokenAdmin}}`
-11. **Estoque / Entrada Estoque (GERENTE)** - usa `{{tokenGerente}}`
-12. **Erros / Role inválida (T03)** - usa `{{tokenCliente}}` em rota de ADMIN
+A collection possui uma pasta específica chamada:
+
+```text
+CTs - Plano de Testes
+```
+
+Dentro dela há subpastas de `CT01` a `CT13`, correspondentes aos cenários
+descritos no `PLANO_DE_TESTES.md`.
+
+Cada subpasta foi organizada para ser executada isoladamente. As requisições
+internas estão numeradas na ordem recomendada. Por exemplo, o
+`CT07 - Pagamento aprovado` executa login, busca unidade, busca produto, cria
+pedido, solicita pagamento e executa o callback aprovado.
+
+Cenários disponíveis:
+
+1. `CT01 - Login válido`
+2. `CT02 - Acesso sem token`
+3. `CT03 - Acesso com perfil sem permissão`
+4. `CT04 - Canal do pedido ausente`
+5. `CT05 - Estoque insuficiente`
+6. `CT06 - Pedido válido criado`
+7. `CT07 - Pagamento aprovado`
+8. `CT08 - Pagamento recusado`
+9. `CT09 - Filtro por canalPedido`
+10. `CT10 - Resgate sem saldo`
+11. `CT11 - Pedido com produto inexistente`
+12. `CT12 - Pedido com quantidade inválida`
+13. `CT13 - Registro de auditoria após pagamento aprovado`
+
+Observação: o `CT13` não possui endpoint de consulta de auditoria. Após executar
+o callback aprovado, a evidência deve ser conferida no MongoDB, na coleção
+`auditoria`, procurando registro relacionado a `PAGAMENTO_APROVADO`.
 
 ## Limitações Conhecidas
 
